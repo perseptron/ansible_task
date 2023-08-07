@@ -1,1 +1,102 @@
 ---
+- hosts: server
+  environment:
+    db_host: 172.17.0.3
+    db_name: laravel
+    db_user: mandrake
+    db_pass: dewq321
+
+  remote_user: mandrake
+  tasks:
+  - name: "Install from repo"
+    become: yes
+    apt:
+      update_cache: yes
+      pkg:
+      -  mc
+      -  iputils-ping
+      -  gpg
+      -  git
+      -  php8.1
+      -  php-xml
+      -  php-mysql
+      -  php-curl
+      -  apache2
+
+  - name: "download composer"
+    become: yes
+    ansible.builtin.get_url:
+      url: https://getcomposer.org/download/latest-stable/composer.phar
+      dest: /usr/local/bin/composer
+      mode: '777'
+
+  - name: "Add nodejs apt key"
+    become: yes
+    apt_key:
+      url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
+      state: present
+
+  - name: "Add nodejs lts.x ppa for apt repo"
+    become: yes
+    apt_repository:
+      repo: deb https://deb.nodesource.com/node_20.x jammy main
+      update_cache: yes
+
+  - name: "Install nodejs"
+    become: yes
+    apt:
+      update_cache: yes
+      name: nodejs
+      state: present
+
+  - name: "Check app exists"
+    become: yes
+    stat:
+      path: /var/www/app
+    register: app
+
+  - name: "Remove old app"
+    become: yes
+    when: app.stat.exists
+    file:
+      path: /var/www/app
+      state: absent
+
+  - name: "Get app"
+    become: yes
+    git:
+      repo: https://github.com/Practical-DevOps/app-for-devops.git
+      dest: /var/www/app
+
+  - name: "rename env"
+    become: yes
+    command: mv /var/www/app/.env.example /var/www/app/.env
+
+  - name: "install app dependency"
+    become: yes
+    composer:
+      command: update
+      working_dir: /var/www/app
+
+  - name: "Set app key"
+    become: yes
+    shell: php /var/www/app/artisan key:generate
+
+  - name: "check vars"
+    shell: |
+      echo "The value of db_host is: $db_host"
+
+  - name: "npm istall (move down)"
+    become: yes
+    npm:
+      path: /var/www/app
+
+  - name: "npm run (move down)"
+    become: yes
+    command: npm run build
+    args:
+      chdir: /var/www/app
+
+  - name: "Migrate database"
+    become: yes
+    shell: php /var/www/app/artisan migrate
