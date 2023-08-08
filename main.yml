@@ -35,7 +35,7 @@
 
   - name: "Add database"
     mysql_db:
-      name: "{{ db_name }}"
+      name: "{{ db_user }}"
       state: present
       login_user: "{{ db_user }}"
       login_password: "{{ db_pass }}"
@@ -54,6 +54,7 @@
     apt:
       update_cache: yes
       pkg:
+      -  mc
       -  gpg
       -  git
       -  php8.1
@@ -106,6 +107,7 @@
       path: /etc/apache2/sites-available/000-default.conf
       regexp: 'DocumentRoot /var/www/html'
       replace: 'DocumentRoot /var/www/app/public'
+
   - name: "rename env"
     command: mv /var/www/app/.env.example /var/www/app/.env
 
@@ -124,11 +126,11 @@
   - name: "Set app key"
     shell: php /var/www/app/artisan key:generate
 
-  - name: "npm istall (move down)"
+  - name: "npm istall"
     npm:
       path: /var/www/app
 
-  - name: "npm run (move down)"
+  - name: "npm run"
     command: npm run build
     args:
       chdir: /var/www/app
@@ -138,7 +140,10 @@
       DB_HOST: "{{ db_host }}"
       DB_USERNAME: "{{ db_user }}"
       DB_PASSWORD: "{{ db_pass }}"
-    shell: php /var/www/app/artisan migrate
+    shell: yes | php /var/www/app/artisan migrate
+
+  - name: "Activate mod_rewrite"
+    shell: a2enmod rewrite
 
   - name: "Start Apache"
     shell: service apache2 restart
