@@ -98,7 +98,7 @@
       dest: /var/www/app
       owner: root
       group: www-data
-      mode: 0775
+      mode: 0777
       recurse: yes
 
   - name: "Change www root"
