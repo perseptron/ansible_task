@@ -116,6 +116,7 @@
       mode: '777'
 
   - name: "Install app dependency"
+    become: no
     composer:
       command: update
       working_dir: /var/www/app
