@@ -1,12 +1,11 @@
 ---
 - hosts: db
   vars:
-    db_host: 172.17.0.3
-    db_name: laravel
-    db_user: mandrake
-    db_pass: dewq321
+    db_host: db
+    db_name: database
+    db_user: user
+    db_pass: 12345
 
-  remote_user: mandrake
   become: yes
   tasks:
   - name: "Install from repo"
@@ -18,7 +17,8 @@
 
 #    notify:
 #      - Start mariadb
-#  - name: "Start mariadb service"
+  - name: "Start mariadb service"
+    shell: service mariadb start
 #    systemd:
 #      name: mariadb
 #      state: started
@@ -41,26 +41,19 @@
       login_password: "{{ db_pass }}"
     register: db_ready
 
-  handlers:
-   - name: Start mariadb
-     service:
-       name: mariadb
-       state: started
+#  handlers:
+#   - name: Start mariadb
+#     service:
+#       name: mariadb
+#       state: started
 
 - hosts: server
-  remote_user: mandrake
   become: yes
   tasks:
-  - name: "check var"
-    debug:
-      var: db_host
-
-  - name: "Install from repo"
+  - name: "Installing packages"
     apt:
       update_cache: yes
       pkg:
-      -  mc
-      -  iputils-ping
       -  gpg
       -  git
       -  php8.1
@@ -69,21 +62,9 @@
       -  php-curl
       -  apache2
 
-#  - name: "Start Apache"
-#    service:
-#     name: apache2
-#     state: started
-
-  - name: "download composer"
-    ansible.builtin.get_url:
-      url: https://getcomposer.org/download/latest-stable/composer.phar
-      dest: /usr/local/bin/composer
-      mode: '777'
-
   - name: "Add nodejs apt key"
     apt_key:
       url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
-      state: present
 
   - name: "Add nodejs lts.x ppa for apt repo"
     apt_repository:
@@ -119,15 +100,22 @@
       group: www-data
       mode: 0775
       recurse: yes
+
   - name: "Change www root"
     replace:
       path: /etc/apache2/sites-available/000-default.conf
-      regexp: '^DocumentRoot /var/www/html$'
+      regexp: 'DocumentRoot /var/www/html'
       replace: 'DocumentRoot /var/www/app/public'
   - name: "rename env"
     command: mv /var/www/app/.env.example /var/www/app/.env
 
-  - name: "install app dependency"
+  - name: "Download composer"
+    ansible.builtin.get_url:
+      url: https://getcomposer.org/download/latest-stable/composer.phar
+      dest: /usr/local/bin/composer
+      mode: '777'
+
+  - name: "Install app dependency"
     composer:
       command: update
       working_dir: /var/www/app
@@ -135,8 +123,12 @@
   - name: "Set app key"
     shell: php /var/www/app/artisan key:generate
 
-  - name: "check vars"
-    shell: echo $db_host
+  - name: "Migrate database"
+    environment:
+      DB_HOST: "{{ db_host }}"
+      DB_USERNAME: "{{ db_user }}"
+      DB_PASSWORD: "{{ db_pass }}"
+    shell: php /var/www/app/artisan migrate
 
   - name: "npm istall (move down)"
     npm:
@@ -147,9 +139,8 @@
     args:
       chdir: /var/www/app
 
-  - name: "Migrate database"
-    environment:
-      DB_HOST: "{{ db_host }}"
-      DB_USERNAME: "{{ db_user }}"
-      DB_PASSWORD: "{{ db_pass }}"
-    shell: php /var/www/app/artisan migrate
+  - name: "Start Apache"
+    shell: service apache2 restart
+#    service:
+#     name: apache2
+#     state: started
