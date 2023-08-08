@@ -124,13 +124,6 @@
   - name: "Set app key"
     shell: php /var/www/app/artisan key:generate
 
-  - name: "Migrate database"
-    environment:
-      DB_HOST: "{{ db_host }}"
-      DB_USERNAME: "{{ db_user }}"
-      DB_PASSWORD: "{{ db_pass }}"
-    shell: php /var/www/app/artisan migrate
-
   - name: "npm istall (move down)"
     npm:
       path: /var/www/app
@@ -139,6 +132,13 @@
     command: npm run build
     args:
       chdir: /var/www/app
+
+  - name: "Migrate database"
+    environment:
+      DB_HOST: "{{ db_host }}"
+      DB_USERNAME: "{{ db_user }}"
+      DB_PASSWORD: "{{ db_pass }}"
+    shell: php /var/www/app/artisan migrate
 
   - name: "Start Apache"
     shell: service apache2 restart
