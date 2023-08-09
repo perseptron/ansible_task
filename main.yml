@@ -132,6 +132,17 @@
       regexp: 'DB_PASSWORD='
       replace: 'DB_PASSWORD={{ db_pass }}'
 
+  - name: "edit env3"
+    replace:
+      path: /var/www/app/.env
+      regexp: 'DB_HOST=127.0.0.1'
+      replace: 'DB_HOST={{ db_host }}'
+
+  - name: "edit env4"
+    replace:
+      path: /var/www/app/.env
+      regexp: 'DB_DATABASE=laravel'
+      replace: 'DB_DATABASE={{ db_name }}'
 
   - name: "Download composer"
     ansible.builtin.get_url:
