@@ -24,7 +24,6 @@
 #      state: started
 #      enabled: yes
 
-
   - name: "Add user"
     mysql_user:
       name: "{{ db_user }}"
@@ -35,7 +34,7 @@
 
   - name: "Add database"
     mysql_db:
-      name: "{{ db_user }}"
+      name: "{{ db_name }}"
       state: present
       login_user: "{{ db_user }}"
       login_password: "{{ db_pass }}"
@@ -67,9 +66,9 @@
     apt_key:
       url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
 
-  - name: "Add nodejs lts.x ppa for apt repo"
+  - name: "Add nodejs 18.x ppa for apt repo"
     apt_repository:
-      repo: deb https://deb.nodesource.com/node_20.x jammy main
+      repo: deb https://deb.nodesource.com/node_18.x jammy main
       update_cache: yes
 
   - name: "Install nodejs"
@@ -102,11 +101,21 @@
       mode: 0777
       recurse: yes
 
-  - name: "Change www root"
-    replace:
-      path: /etc/apache2/sites-available/000-default.conf
-      regexp: 'DocumentRoot /var/www/html'
-      replace: 'DocumentRoot /var/www/app/public'
+  - name: "Change apache config"
+    copy:
+      src: apache2.conf
+      dest: /etc/apache2/apache2.conf
+      owner: root
+      group: root
+      mode: '0644'
+
+  - name: "Add site"
+    copy:
+      src: app.conf
+      dest: /etc/apache2/sites-available/app.conf
+      owner: root
+      group: root
+      mode: '0644'
 
   - name: "rename env"
     command: mv /var/www/app/.env.example /var/www/app/.env
@@ -144,6 +153,12 @@
 
   - name: "Activate mod_rewrite"
     shell: a2enmod rewrite
+
+  - name: "Disabel def site"
+    shell: a2dissite 000-default.conf
+
+  - name: "Set default site"
+    shell: a2ensite app.conf
 
   - name: "Start Apache"
     shell: service apache2 restart
