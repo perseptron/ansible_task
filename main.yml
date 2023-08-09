@@ -120,6 +120,19 @@
   - name: "rename env"
     command: mv /var/www/app/.env.example /var/www/app/.env
 
+  - name: "edit env"
+    replace:
+      path: /var/www/app/.env
+      regexp: 'DB_USERNAME=root'
+      replace: 'DB_USERNAME={{ db_user }}'
+
+  - name: "edit env2"
+    replace:
+      path: /var/www/app/.env
+      regexp: 'DB_PASSWORD='
+      replace: 'DB_PASSWORD={{ db_pass }}'
+
+
   - name: "Download composer"
     ansible.builtin.get_url:
       url: https://getcomposer.org/download/latest-stable/composer.phar
