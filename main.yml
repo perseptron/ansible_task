@@ -49,6 +49,11 @@
 - hosts: server
   become: yes
   tasks:
+
+  - name: Add php repository
+    ansible.builtin.apt_repository:
+      repo: ppa:ondrej/php
+
   - name: "Installing packages"
     apt:
       update_cache: yes
