@@ -62,7 +62,7 @@
       -  gpg
       -  git
       -  php8.1
-      -  libapache2-mod 
+      -  libapache2-mod-php
       -  php-xml
       -  php-mysql
       -  php-curl
